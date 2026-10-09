@@ -83,7 +83,21 @@ def selftest():
         for i, color in enumerate(CELL_COLORS):
             px = grid.getpixel(((i % 3) * 64 + 32, (i // 3) * 64 + 32))
             assert px == color, (i, px, color)
-    print("selftest PASS（9 色块 3×3 拼合，位置与颜色逐格核对）")
+        # 2×2 四宫格回归（2026-10-09：宫格数选择面扩展后纳入自检）
+        files4 = []
+        for i, color in enumerate(CELL_COLORS[:4]):
+            f = Path(tmp) / f"q{i}.png"
+            Image.new("RGB", (64, 64), color).save(f)
+            files4.append(f)
+        out4 = Path(tmp) / "grid2x2.png"
+        rc4 = make_grid(files4, out4, 2, 64)
+        assert rc4 == 0
+        g4 = Image.open(out4)
+        assert g4.size == (128, 128), g4.size
+        for i, color in enumerate(CELL_COLORS[:4]):
+            px = g4.getpixel(((i % 2) * 64 + 32, (i // 2) * 64 + 32))
+            assert px == color, (i, px, color)
+    print("selftest PASS（9 色块 3×3 + 4 色块 2×2，位置与颜色逐格核对）")
     return 0
 
 

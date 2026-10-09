@@ -4,13 +4,13 @@
 
 校验宫格分镜智能体产出的 JSON 是否满足约束：
   C1 可解析的 JSON（容忍 ```json 围栏包裹）
-  C2 shots 数量与宫格数一致（5x5=25 / 3x3=9，可用 --n 覆盖）
+  C2 shots 数量与宫格数一致（2x2=4 / 2x3=6 / 3x3=9 / 5x5=25，可用 --n 覆盖）
   C3 每条 prompt_text 词数在 20-30（超出计警告）
   C5 必含 "no timecode" 与 "no subtitles"
   C4/C6 禁用句式（"A scene showing" / "There is a" / "in corner"）
 
 用法:
-    python validate_storyboard.py <story.json> [--n 25|9]
+    python validate_storyboard.py <story.json> [--n 25|9|6|4]
     python validate_storyboard.py --selftest
 退出码: 0=无错误, 1=存在错误, 2=用法/文件错误
 """
@@ -18,16 +18,24 @@ import argparse
 import json
 import re
 import sys
+import tempfile
+from pathlib import Path
 
 FORBIDDEN = ["A scene showing", "There is a", "in corner"]
 REQUIRED = ["no timecode", "no subtitles"]
 WORD_RANGE = (20, 30)
-LAYOUT_N = {"5x5": 25, "3x3": 9}
+LAYOUT_N = {"5x5": 25, "3x3": 9, "2x2": 4, "2x3": 6, "3x2": 6}
 
 
 def strip_fences(text):
     m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.S)
     return m.group(1) if m else text
+
+
+def load(path):
+    """读取分镜 JSON 文件（容忍 ```json 围栏包裹）。"""
+    raw = Path(path).read_text(encoding="utf-8")
+    return json.loads(strip_fences(raw))
 
 
 def check(data, expect_n):
@@ -78,14 +86,20 @@ def selftest():
     e2, _ = check(bad, None)
     assert not e1, f"正例误报: {e1}"
     assert len(e2) >= 3, f"负例漏报: {e2}"  # 数量 8!=9 + 禁用句式 + 2 个必含词缺失
-    print("selftest PASS（正例 0 错，负例抓到 %d 错）" % len(e2))
+    # 文件读取路径回归（2026-10-09：修复 CLI 路径缺 pathlib 导入后纳入自检）
+    with tempfile.TemporaryDirectory() as tmp:
+        f = Path(tmp) / "sb.json"
+        f.write_text("```json\n" + json.dumps(good) + "\n```", encoding="utf-8")
+        e3, _ = check(load(f), None)
+        assert not e3, f"文件读取路径误报: {e3}"
+    print("selftest PASS（正例 0 错，负例抓到 %d 错，文件读取路径通过）" % len(e2))
     return 0
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("file", nargs="?", help="分镜 JSON 文件（容忍 ```json 围栏）")
-    ap.add_argument("--n", type=int, choices=(9, 25), help="期望 shots 数量，默认按 grid_layout 推断")
+    ap.add_argument("--n", type=int, choices=(4, 6, 9, 25), help="期望 shots 数量，默认按 grid_layout 推断")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
 
@@ -95,8 +109,7 @@ def main():
         ap.print_help()
         return 2
     try:
-        raw = Path(args.file).read_text(encoding="utf-8")
-        data = json.loads(strip_fences(raw))
+        data = load(args.file)
     except FileNotFoundError:
         print(f"文件不存在: {args.file}")
         return 2
