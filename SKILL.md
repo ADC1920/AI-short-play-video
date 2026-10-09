@@ -1,6 +1,7 @@
 ---
 name: manju-video
-description: "AI 漫剧/动态漫短剧制作全流程技能。当用户要制作漫剧、AI 短剧、竖屏微短剧、动态漫画、漫画风视频，或有一句话剧情/剧情梗概要快速成片，或提到 Seedance、即梦、Jimeng、Gemini 分镜脚本、Nano Banana 参考图、宫格分镜（4/6/9/25宫格）、@素材引用、素材锚点/参考图一致性、人脸审核限制/人脸不过审、内容审核敏感词、Liblib 哩布哩布、分镜提示词、时间轴提示词、视频生成提示词、视频延长、转场设计、台词时长、长剧多集改编、分镜 JSON 校验、九宫格拼图、镜头衔接连贯时使用；生成的视频出现人脸漂移换人、角色重复、多余字幕水印、风格漂移、拼接跳帧等故障要排障时也用。产出可直接粘贴使用的系统提示词、工程级分镜蓝图、排障速查与逐步操作指引。AI comic-drama (motion comic) video production with Seedance / Jimeng: storyboard agent prompts, grid storyboard JSON, @reference assets, face-check workarounds, symptom-to-fix troubleshooting, multi-episode adaptation, storyboard JSON linting, grid assembly."
+version: 1.2.0
+description: "AI 漫剧/动态漫短剧制作全流程技能。当用户要制作漫剧、AI 短剧、竖屏微短剧、动态漫画、漫画风视频，或有一句话剧情/剧情梗概要快速成片，或提到 Seedance、即梦、Jimeng、Gemini 分镜脚本、Nano Banana 参考图、宫格分镜（4/6/9/25宫格）、@素材引用、素材锚点/参考图一致性、引用核对、多集项目初始化、人脸审核限制/人脸不过审、内容审核敏感词、Liblib 哩布哩布、分镜提示词、时间轴提示词、视频生成提示词、视频延长、转场设计、台词时长、长剧多集改编、分镜 JSON 校验、九宫格拼图、镜头衔接连贯时使用；生成的视频出现人脸漂移换人、角色重复、多余字幕水印、风格漂移、拼接跳帧等故障要排障时也用。产出可直接粘贴使用的系统提示词、工程级分镜蓝图、排障速查与逐步操作指引。AI comic-drama (motion comic) video production with Seedance / Jimeng: storyboard agent prompts, grid storyboard JSON, @reference assets, face-check workarounds, symptom-to-fix troubleshooting, multi-episode adaptation, storyboard JSON linting, grid assembly."
 ---
 
 # AI 漫剧制作（Seedance 工作流）
@@ -40,7 +41,7 @@ description: "AI 漫剧/动态漫短剧制作全流程技能。当用户要制�
 
 ## 路线 B：宫格分镜直生（快）
 
-1. 读 `references/grid-storyboard.md`，用其中的宫格分镜提示词创建自定义智能体（25 宫格）。
+1. 读 `references/grid-storyboard.md`，用其中的宫格分镜提示词创建自定义智能体（宫格数按片长选：15s 优先 9 宫格、8–10s 短动作 4 宫格、30s 分两段 6 宫格、长剧情分段用 25 宫格——原文默认给 25 宫格版，改一句即可转）。
 2. 在自定义智能体内导入角色素材 + 剧情文本 → 得到分镜 JSON（机检：`python scripts/validate_storyboard.py <json文件>`）。
 3. 新窗口导入素材 + JSON + 生成提示词 → 得到宫格分镜图 → 高清放大 → 去水印。
 4. 视频生成平台导入宫格图 + 该文件里的视频提示词直出 15s 片段。
@@ -66,8 +67,8 @@ Seedance 对真实人脸有人脸检测，人物参考图常被拦。五种规�
 
 剧本超过单条片段容量（整部短剧、小说改编）时，先切分再逐集走路线 A/B：
 
-1. **分集**：按剧情节点切成 N 集，每集有独立的钩子与收尾，落成 `剧本/第X集.md`。
-2. **项目目录**：每集一个目录，固定四件——`剧本.md`（本集文本）、`素材/`（人物与场景参考图，文件名 = 素材注册名）、`分镜/`（蓝图、宫格 JSON、宫格分镜图）、`成片/`（逐镜视频与拼接成品）。
+1. **分集**：按剧情节点切成 N 集，每集有独立的钩子与收尾，落成 `第X集/剧本.md`。
+2. **项目结构**：项目根放 `素材/`（人物/场景/道具参考图，全剧共用一套，文件名 = 素材 @ 引用名）；每集一个子目录 `第X集/`，固定三件——`剧本.md`（本集文本）、`分镜/`（蓝图、宫格 JSON、宫格分镜图、`尾帧.md`）、`成片/`（逐镜视频与拼接成品）。可用 `python scripts/init_project.py <项目目录> --episodes N` 一键生成结构。
 3. **素材全剧共用**：人物/场景参考图与 @引用名全剧一套，只在造型变化时补新参考图；跨集一致性靠同一批素材 + 同名 @引用。开剧先锁定画幅（漫剧投放主流 9:16 竖屏）与视觉风格词，全剧贯通不改。
 4. **逐集产出与衔接**：每集独立走路线 A/B 出分镜和逐镜视频，剪辑工具拼接成集；集与集之间用上一集成片尾帧作下一集首镜参考，也可用视频延长续写。每集产出后记一句尾帧画面描述（存 `分镜/尾帧.md`），下集首镜衔接直接引用。
 
@@ -81,7 +82,7 @@ Seedance 对真实人脸有人脸检测，人物参考图常被拦。五种规�
 | 分辨率 | 480p–720p |
 | 真实人脸 | 含真实人脸的参考图会被拦截，规避见路线 C |
 | 画幅 | 漫剧投放主流 9:16 竖屏，横屏备用；开剧一次定，素材/分镜/成片贯通 |
-| 提示词长度 | 精确优先不堆砌；长提示词（千字级）稳定性下降，必要时拆镜分次生成 |
+| 提示词长度 | 精确优先不堆砌；单条提示词经验上限约 1300–1500 字符（超 1600 失败率显著上升，编测值随模型版本漂移）；超长时拆分镜头分次生成 |
 
 以上为编写时点的公开口径，随平台版本会变；与实际不符时以实测为准并回改本表。
 
@@ -118,8 +119,10 @@ Seedance 对真实人脸有人脸检测，人物参考图常被拦。五种规�
 | `references/grid-storyboard.md` | 走路线 B 时；或用户给了剧情梗概要快速出片时 |
 | `references/face-workarounds.md` | 人物参考图被人脸审核拦截、或用户主动问怎么绕人脸限制时 |
 | `references/asset-workflow.md` | 做人物/场景素材时；保角色一致性时（锚点法 / ref 数量红线 / 候选图选择 / 把关清单 / 文字入图规则） |
-| `scripts/validate_storyboard.py` | 宫格分镜 JSON 产出后机检（数量/词数/必含排除词/禁用句式） |
-| `scripts/make_grid.py` | 把 9 张场景图本地拼成 3×3 九宫格（也支持 25 张拼 5×5） |
+| `scripts/validate_storyboard.py` | 宫格分镜 JSON 产出后机检（数量/词数/字符数上限/必含排除词中英兼容/禁用句式/编号重复） |
+| `scripts/make_grid.py` | 本地拼宫格（4/6/9/25：`--cols 2/3/5`），替代在线拼图工具 |
+| `scripts/check_refs.py` | 素材与引用核对：@引用名 vs `素材/` 文件名——断链引用（Error）与闲置素材（Warning）双向报告 |
+| `scripts/init_project.py` | 多集项目脚手架：一键生成「根 `素材/` + 各集三件目录」结构 |
 
 ## 更新记录
 
@@ -129,3 +132,4 @@ Seedance 对真实人脸有人脸检测，人物参考图常被拦。五种规�
 - 2026-10-02 结构层：新增多集工作流、行为时效标注与本更新记录。
 - 2026-10-02 触发面：新增触发示例 10 条，description 补长剧多集/JSON 校验/拼图/衔接触发词。
 - 2026-10-09 v1.1 行业实践融合：素材锚点法与 ref 数量红线（新增 `references/asset-workflow.md`）、台词语速折算、时间轴式提示词、视频延长衔接、内容审核排障与敏感词替换、成本与确认纪律、画幅锁定；机检扩至 4/6/9/25 宫格；修复 `scripts/validate_storyboard.py` CLI 调用路径缺陷（缺 pathlib 导入，selftest 已覆盖该路径）。
+- 2026-10-09 v1.2 工程化补齐：`validate_storyboard.py` 中英双语适配（排除词中英任一命中即过、中文提示词跳过英文词数检查）＋字符数上限检查（--max-chars）＋编号重复检测＋GBK 编码回退；新增 `scripts/check_refs.py`（@引用与素材文件名双向核对，把「@名称须与素材名一致」铁律变成机检）与 `scripts/init_project.py`（多集项目脚手架）；多集项目结构澄清（根 `素材/` 全剧共用 + 每集三件）；front-matter 补 version；新增 CHANGELOG.md。
